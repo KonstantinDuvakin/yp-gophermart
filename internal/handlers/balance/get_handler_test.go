@@ -10,6 +10,7 @@ import (
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/models"
 	serviceauth "github.com/KonstantinDuvakin/yp-gophermart/internal/service/auth"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage/mock"
+	"go.uber.org/mock/gomock"
 )
 
 func serve(handler http.Handler, req *http.Request, authed bool) *httptest.ResponseRecorder {
@@ -39,11 +40,13 @@ func TestGetHandler(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			store := &mock.Storage{
-				GetBalanceFn: func(ctx context.Context, userID int64) (models.Balance, error) {
-					return c.balance, c.getErr
-				},
-			}
+			ctrl := gomock.NewController(t)
+			store := mock.NewMockStorage(ctrl)
+			store.EXPECT().
+				GetBalance(gomock.Any(), gomock.Any()).
+				Return(c.balance, c.getErr).
+				AnyTimes()
+
 			req := httptest.NewRequest(http.MethodGet, "/api/user/balance", nil)
 			rec := serve(GetHandler(store), req, c.authed)
 			if rec.Code != c.wantStatus {

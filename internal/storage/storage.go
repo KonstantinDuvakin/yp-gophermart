@@ -24,6 +24,8 @@ var (
 )
 
 // Storage — абстракция над хранилищем данных сервиса.
+//
+//go:generate mockgen -source=storage.go -destination=mock/mock.go -package=mock
 type Storage interface {
 	// CreateUser создаёт пользователя и возвращает его идентификатор.
 	// Если логин занят, возвращает ErrLoginTaken.

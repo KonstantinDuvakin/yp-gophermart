@@ -30,7 +30,7 @@ func TestMiddleware(t *testing.T) {
 			var gotID int64
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				nextCalled = true
-				gotID, _ = UserIdFromContext(r.Context())
+				gotID, _ = UserIDFromContext(r.Context())
 				w.WriteHeader(http.StatusOK)
 			})
 

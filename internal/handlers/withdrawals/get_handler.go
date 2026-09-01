@@ -3,6 +3,7 @@ package withdrawals
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/middlewares/auth"
@@ -13,7 +14,7 @@ import (
 // пользователя от новых к старым. Коды: 200/204/401/500.
 func GetHandler(store storage.Storage) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		userId, ok := auth.UserIdFromContext(r.Context())
+		userId, ok := auth.UserIDFromContext(r.Context())
 		if !ok {
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte("Вы не авторизованы"))
@@ -22,6 +23,7 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 
 		withdrawals, err := store.GetWithdrawals(r.Context(), userId)
 		if err != nil {
+			fmt.Printf("ошибка: %v", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -34,6 +36,7 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 
 		data, err := json.Marshal(withdrawals)
 		if err != nil {
+			fmt.Printf("ошибка: %v", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return

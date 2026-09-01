@@ -1,7 +1,6 @@
 package register
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	serviceauth "github.com/KonstantinDuvakin/yp-gophermart/internal/service/auth"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage/mock"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPostHandler(t *testing.T) {
@@ -30,11 +30,13 @@ func TestPostHandler(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			store := &mock.Storage{
-				CreateUserFn: func(ctx context.Context, login, hash string) (int64, error) {
-					return 1, c.createErr
-				},
-			}
+			ctrl := gomock.NewController(t)
+			store := mock.NewMockStorage(ctrl)
+			store.EXPECT().
+				CreateUser(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(int64(1), c.createErr).
+				AnyTimes()
+
 			req := httptest.NewRequest(http.MethodPost, "/api/user/register", strings.NewReader(c.body))
 			rec := httptest.NewRecorder()
 

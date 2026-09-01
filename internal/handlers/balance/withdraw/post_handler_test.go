@@ -1,7 +1,6 @@
 package withdraw
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	serviceauth "github.com/KonstantinDuvakin/yp-gophermart/internal/service/auth"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage/mock"
+	"go.uber.org/mock/gomock"
 )
 
 const validOrder = "12345678903"
@@ -45,11 +45,13 @@ func TestPostHandler(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			store := &mock.Storage{
-				WithdrawFn: func(ctx context.Context, userID int64, order string, sum float64) error {
-					return c.withdrawErr
-				},
-			}
+			ctrl := gomock.NewController(t)
+			store := mock.NewMockStorage(ctrl)
+			store.EXPECT().
+				Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(c.withdrawErr).
+				AnyTimes()
+
 			req := httptest.NewRequest(http.MethodPost, "/api/user/balance/withdraw", strings.NewReader(c.body))
 			rec := serve(PostHandler(store), req, c.authed)
 			if rec.Code != c.wantStatus {

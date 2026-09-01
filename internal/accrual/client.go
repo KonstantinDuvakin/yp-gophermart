@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/KonstantinDuvakin/yp-gophermart/internal/service/retry"
 )
 
 // Dto — ответ системы расчёта начислений по конкретному заказу.
@@ -19,11 +21,19 @@ type Dto struct {
 	Accrual *float64 `json:"accrual,omitempty"`
 }
 
+type StatusError struct {
+	Code int
+}
+
+func (se *StatusError) Error() string {
+	return fmt.Errorf("ошибка").Error()
+}
+
 var (
 	// ErrOrderNotRegistered возвращается, когда accrual ещё не знает о заказе (HTTP 204).
 	ErrOrderNotRegistered = errors.New("заказ не зарегистрирован")
-	// ErrToManyRequests возвращается при превышении лимита запросов к accrual (HTTP 429).
-	ErrToManyRequests = errors.New("слишком много запросов")
+	// ErrTooManyRequests возвращается при превышении лимита запросов к accrual (HTTP 429).
+	ErrTooManyRequests = errors.New("слишком много запросов")
 )
 
 const (
@@ -45,9 +55,21 @@ func NewClient(url string) *Client {
 }
 
 // GetOrderAccrual запрашивает статус расчёта по номеру заказа. Возвращает
-// ErrOrderNotRegistered при 204 и ErrToManyRequests (со временем ожидания
+// ErrOrderNotRegistered при 204 и ErrTooManyRequests (со временем ожидания
 // из Retry-After) при 429.
 func (c *Client) GetOrderAccrual(ctx context.Context, number string) (*Dto, time.Duration, error) {
+	var dto *Dto
+	var retryAfter time.Duration
+	err := retry.Do(ctx, IsTransientErr, func() error {
+		var e error
+		dto, retryAfter, e = c.getOrder(ctx, number)
+		return e
+	})
+
+	return dto, retryAfter, err
+}
+
+func (c *Client) getOrder(ctx context.Context, number string) (*Dto, time.Duration, error) {
 	url := c.url + "/api/orders/" + number
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -73,10 +95,23 @@ func (c *Client) GetOrderAccrual(ctx context.Context, number string) (*Dto, time
 	case http.StatusTooManyRequests:
 		d, err := strconv.Atoi(resp.Header.Get("Retry-After"))
 		if err != nil {
+			fmt.Printf("не удалось получить значение Retry-After: %v", err)
 			d = 30
 		}
-		return nil, time.Duration(d) * time.Second, ErrToManyRequests
+		return nil, time.Duration(d) * time.Second, ErrTooManyRequests
 	default:
-		return nil, 0, fmt.Errorf("accrual status: %d", resp.StatusCode)
+		return nil, 0, &StatusError{Code: resp.StatusCode}
 	}
+}
+
+func IsTransientErr(err error) bool {
+	if errors.Is(err, ErrOrderNotRegistered) || errors.Is(err, ErrTooManyRequests) {
+		return false
+	}
+
+	if se, ok := errors.AsType[*StatusError](err); ok {
+		return se.Code >= 500
+	}
+
+	return true
 }

@@ -58,8 +58,8 @@ func TestGetOrderAccrual_TooManyRequests(t *testing.T) {
 	defer srv.Close()
 
 	_, retryAfter, err := NewClient(srv.URL).GetOrderAccrual(context.Background(), "limit")
-	if !errors.Is(err, ErrToManyRequests) {
-		t.Errorf("err = %v, want ErrToManyRequests", err)
+	if !errors.Is(err, ErrTooManyRequests) {
+		t.Errorf("err = %v, want ErrTooManyRequests", err)
 	}
 	if retryAfter != 3*time.Second {
 		t.Errorf("retryAfter = %v, want 3s", retryAfter)
@@ -71,7 +71,7 @@ func TestGetOrderAccrual_ServerError(t *testing.T) {
 	defer srv.Close()
 
 	_, _, err := NewClient(srv.URL).GetOrderAccrual(context.Background(), "boom")
-	if err == nil || errors.Is(err, ErrOrderNotRegistered) || errors.Is(err, ErrToManyRequests) {
+	if err == nil || errors.Is(err, ErrOrderNotRegistered) || errors.Is(err, ErrTooManyRequests) {
 		t.Errorf("err = %v, want generic error", err)
 	}
 }

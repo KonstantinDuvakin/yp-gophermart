@@ -8,6 +8,7 @@ import (
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/models"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage/mock"
+	"go.uber.org/mock/gomock"
 )
 
 func TestMapAccrualStatus(t *testing.T) {
@@ -47,27 +48,25 @@ func TestProcessBatch(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	var (
-		gotNumber string
-		gotStatus string
-		gotAcc    *float64
-	)
-	store := &mock.Storage{
-		GetUnprocessedOrdersFn: func(ctx context.Context) ([]string, error) {
-			return []string{"100"}, nil
-		},
-		UpdateOrderAccrualFn: func(ctx context.Context, number, status string, accrual *float64) error {
-			gotNumber, gotStatus, gotAcc = number, status, accrual
+	ctrl := gomock.NewController(t)
+	store := mock.NewMockStorage(ctrl)
+
+	store.EXPECT().
+		GetUnprocessedOrders(gomock.Any()).
+		Return([]string{"100"}, nil)
+
+	var gotStatus string
+	var gotAcc *float64
+	store.EXPECT().
+		UpdateOrderAccrual(gomock.Any(), "100", gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, status string, accrual *float64) error {
+			gotStatus, gotAcc = status, accrual
 			return nil
-		},
-	}
+		})
 
 	w := &Worker{store: store, client: NewClient(srv.URL)}
 	w.processBatch(context.Background())
 
-	if gotNumber != "100" {
-		t.Errorf("number = %q, want 100", gotNumber)
-	}
 	if gotStatus != models.OrderStatusProcessed {
 		t.Errorf("status = %q, want %q", gotStatus, models.OrderStatusProcessed)
 	}

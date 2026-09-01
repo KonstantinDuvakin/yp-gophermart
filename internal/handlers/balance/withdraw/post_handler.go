@@ -4,6 +4,7 @@ package withdraw
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/middlewares/auth"
@@ -16,7 +17,7 @@ import (
 // счёт указанного заказа. Коды: 200/401/402/422/500.
 func PostHandler(store storage.Storage) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		userId, ok := auth.UserIdFromContext(r.Context())
+		userId, ok := auth.UserIDFromContext(r.Context())
 		if !ok {
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte("Вы не авторизованы"))
@@ -53,6 +54,7 @@ func PostHandler(store storage.Storage) http.HandlerFunc {
 				rw.Write([]byte("Недостаточно средств"))
 				return
 			}
+			fmt.Printf("ошибка: %v", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return

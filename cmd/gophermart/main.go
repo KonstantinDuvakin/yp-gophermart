@@ -45,7 +45,12 @@ func main() {
 
 	client := accrual.NewClient(c.AccrualSystemAddress)
 	worker := accrual.NewWorker(store, client)
-	go worker.Run(ctx)
+
+	accrualDone := make(chan struct{})
+	go func() {
+		worker.Run(ctx)
+		close(accrualDone)
+	}()
 
 	r := chi.NewRouter()
 	r.Route("/api/user", func(r chi.Router) {
@@ -92,4 +97,6 @@ func main() {
 	defer cancel()
 
 	_ = server.Shutdown(shutdownCtx)
+
+	<-accrualDone
 }

@@ -3,7 +3,9 @@ package accrual
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/models"
@@ -45,26 +47,57 @@ func (w *Worker) processBatch(ctx context.Context) {
 		return
 	}
 
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5)
+
+Orders:
 	for _, num := range orderNums {
-		accrualRes, td, err := w.client.GetOrderAccrual(ctx, num)
-		switch {
-		case errors.Is(err, ErrOrderNotRegistered):
-			continue
-		case errors.Is(err, ErrToManyRequests):
-			time.Sleep(td)
-			return
-		case err != nil:
-			log.Printf("worker: order %s: %v", num, err)
-			continue
-		}
-
-		status, accrual := mapAccrualStatus(accrualRes)
-
-		err = w.store.UpdateOrderAccrual(ctx, num, status, accrual)
-		if err != nil {
-			log.Printf("worker: fail update order %s: %v", num, err)
+		select {
+		case <-ctx.Done():
+			break Orders
+		case sem <- struct{}{}:
+			wg.Add(1)
+			go func(num string) {
+				defer wg.Done()
+				defer func() { <-sem }()
+				err := w.processOne(ctx, num)
+				if err != nil {
+					log.Printf("error: %v", err)
+				}
+			}(num)
 		}
 	}
+
+	wg.Wait()
+}
+
+func (w *Worker) processOne(ctx context.Context, num string) error {
+	accrualRes, td, err := w.client.GetOrderAccrual(ctx, num)
+	switch {
+	case errors.Is(err, ErrOrderNotRegistered):
+		return ErrOrderNotRegistered
+	case errors.Is(err, ErrTooManyRequests):
+		timer := time.NewTimer(td)
+		defer timer.Stop()
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+			return ErrTooManyRequests
+		}
+	case err != nil:
+		return fmt.Errorf("worker: order %s: %w", num, err)
+	}
+
+	status, accrual := mapAccrualStatus(accrualRes)
+
+	err = w.store.UpdateOrderAccrual(ctx, num, status, accrual)
+	if err != nil {
+		return fmt.Errorf("worker: fail update order %s: %w", num, err)
+	}
+
+	return nil
 }
 
 func mapAccrualStatus(dto *Dto) (string, *float64) {

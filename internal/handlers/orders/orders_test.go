@@ -13,6 +13,7 @@ import (
 	serviceauth "github.com/KonstantinDuvakin/yp-gophermart/internal/service/auth"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage/mock"
+	"go.uber.org/mock/gomock"
 )
 
 const validOrder = "12345678903"
@@ -49,11 +50,13 @@ func TestPostHandler(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			store := &mock.Storage{
-				CreateOrderFn: func(ctx context.Context, userID int64, number string) error {
-					return c.createErr
-				},
-			}
+			ctrl := gomock.NewController(t)
+			store := mock.NewMockStorage(ctrl)
+			store.EXPECT().
+				CreateOrder(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(c.createErr).
+				AnyTimes()
+
 			req := httptest.NewRequest(http.MethodPost, "/api/user/orders", strings.NewReader(c.body))
 			rec := serve(PostHandler(store), req, c.authed)
 			if rec.Code != c.wantStatus {
@@ -81,11 +84,13 @@ func TestGetHandler(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			store := &mock.Storage{
-				GetOrdersFn: func(ctx context.Context, userID int64) ([]models.Order, error) {
-					return c.result, c.getErr
-				},
-			}
+			ctrl := gomock.NewController(t)
+			store := mock.NewMockStorage(ctrl)
+			store.EXPECT().
+				GetOrders(gomock.Any(), gomock.Any()).
+				Return(c.result, c.getErr).
+				AnyTimes()
+
 			req := httptest.NewRequest(http.MethodGet, "/api/user/orders", nil)
 			rec := serve(GetHandler(store), req, c.authed)
 			if rec.Code != c.wantStatus {

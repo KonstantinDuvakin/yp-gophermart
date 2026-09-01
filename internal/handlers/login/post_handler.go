@@ -4,6 +4,7 @@ package login
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/models"
@@ -38,6 +39,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 				rw.Write([]byte("Пользователя с таким логином не существует"))
 				return
 			}
+			fmt.Printf("ошибка: %v", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -45,6 +47,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 
 		isCorrectPassword, err := auth.CheckPasswordHash(user.PasswordHash, userDto.Password)
 		if err != nil {
+			fmt.Printf("ошибка: %v", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -58,6 +61,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 
 		jwt, err := tm.BuildJWTString(user.ID)
 		if err != nil {
+			fmt.Printf("ошибка: %v", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return

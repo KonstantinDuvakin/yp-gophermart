@@ -1,7 +1,6 @@
 package login
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	serviceauth "github.com/KonstantinDuvakin/yp-gophermart/internal/service/auth"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage"
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/storage/mock"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPostHandler(t *testing.T) {
@@ -33,11 +33,13 @@ func TestPostHandler(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			store := &mock.Storage{
-				GetUserByLoginFn: func(ctx context.Context, login string) (models.User, error) {
-					return c.user, c.getErr
-				},
-			}
+			ctrl := gomock.NewController(t)
+			store := mock.NewMockStorage(ctrl)
+			store.EXPECT().
+				GetUserByLogin(gomock.Any(), gomock.Any()).
+				Return(c.user, c.getErr).
+				AnyTimes()
+
 			req := httptest.NewRequest(http.MethodPost, "/api/user/login", strings.NewReader(c.body))
 			rec := httptest.NewRecorder()
 

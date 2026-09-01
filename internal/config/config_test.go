@@ -12,11 +12,15 @@ func TestNewConfigDefaults(t *testing.T) {
 	}
 }
 
-func TestApplyEnv_DefaultJwtSecret(t *testing.T) {
+func TestApplyEnv_RandomJwtSecret(t *testing.T) {
 	c := &Config{}
 	c.ApplyEnv()
-	if c.JwtSecret != "change_me" {
-		t.Errorf("JwtSecret = %q, want change_me (default)", c.JwtSecret)
+	// При отсутствии JWT_SECRET генерится случайный 32-байтный секрет (64 hex-символа).
+	if len(c.JwtSecret) != 64 {
+		t.Errorf("JwtSecret length = %d, want 64 (random hex secret)", len(c.JwtSecret))
+	}
+	if c.JwtSecret == "change_me" {
+		t.Error("JwtSecret must not fall back to a public default")
 	}
 }
 
