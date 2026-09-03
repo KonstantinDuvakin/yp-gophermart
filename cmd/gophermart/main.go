@@ -42,7 +42,7 @@ func main() {
 
 	tm := auth2.NewTokenManager(c.JwtSecret)
 
-	store, err := storage.NewPostgresStorage(ctx, c.DatabaseUri)
+	store, err := storage.NewPostgresStorage(ctx, c.DatabaseURI)
 	if err != nil {
 		log.Fatalf("failed to connect to postgres storage: %v", err)
 	}

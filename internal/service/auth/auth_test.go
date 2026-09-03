@@ -41,8 +41,8 @@ func TestTokenManager_Roundtrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ParseJWTString: %v", err)
 	}
-	if claims.UserId != 42 {
-		t.Errorf("UserId = %d, want 42", claims.UserId)
+	if claims.UserID != 42 {
+		t.Errorf("UserId = %d, want 42", claims.UserID)
 	}
 }
 

@@ -17,7 +17,7 @@ import (
 // проверяет его по Луну и привязывает к пользователю. Коды: 202/200/400/409/422/500.
 func PostHandler(store storage.Storage) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		userId, ok := auth.UserIDFromContext(r.Context())
+		userID, ok := auth.UserIDFromContext(r.Context())
 		if !ok {
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte("Вы не авторизованы"))
@@ -47,7 +47,7 @@ func PostHandler(store storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		err = store.CreateOrder(r.Context(), userId, orderNum)
+		err = store.CreateOrder(r.Context(), userID, orderNum)
 		switch {
 		case err == nil:
 			rw.WriteHeader(http.StatusAccepted)

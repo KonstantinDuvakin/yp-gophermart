@@ -40,7 +40,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 			return
 		}
 
-		userId, err := store.CreateUser(r.Context(), userDto.Login, hashedPassword)
+		userID, err := store.CreateUser(r.Context(), userDto.Login, hashedPassword)
 		if err != nil {
 			if errors.Is(err, storage.ErrLoginTaken) {
 				rw.WriteHeader(http.StatusConflict)
@@ -53,7 +53,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 			return
 		}
 
-		jwt, err := tm.BuildJWTString(userId)
+		jwt, err := tm.BuildJWTString(userID)
 		if err != nil {
 			slog.Error("register: build token", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)

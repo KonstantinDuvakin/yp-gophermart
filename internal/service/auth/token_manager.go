@@ -9,7 +9,7 @@ import (
 // Claims — полезная нагрузка JWT: стандартные поля и идентификатор пользователя.
 type Claims struct {
 	jwt.RegisteredClaims
-	UserId int64
+	UserID int64
 }
 
 // TokenManager выпускает и проверяет JWT, храня секрет и срок жизни токена.
@@ -29,7 +29,7 @@ func (tm *TokenManager) BuildJWTString(userId int64) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tm.ttl)),
 		},
-		UserId: userId,
+		UserID: userId,
 	})
 
 	tokenString, err := token.SignedString(tm.secret)

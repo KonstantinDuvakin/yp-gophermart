@@ -7,7 +7,7 @@ func TestNewConfigDefaults(t *testing.T) {
 	if c.RunAddress != "localhost:8080" {
 		t.Errorf("RunAddress default = %q, want localhost:8080", c.RunAddress)
 	}
-	if c.DatabaseUri != "" || c.AccrualSystemAddress != "" {
+	if c.DatabaseURI != "" || c.AccrualSystemAddress != "" {
 		t.Errorf("expected empty DatabaseUri/AccrualSystemAddress by default")
 	}
 }
@@ -36,8 +36,8 @@ func TestApplyEnv_FromEnv(t *testing.T) {
 	if c.RunAddress != "0.0.0.0:9000" {
 		t.Errorf("RunAddress = %q", c.RunAddress)
 	}
-	if c.DatabaseUri != "postgres://x" {
-		t.Errorf("DatabaseUri = %q", c.DatabaseUri)
+	if c.DatabaseURI != "postgres://x" {
+		t.Errorf("DatabaseUri = %q", c.DatabaseURI)
 	}
 	if c.AccrualSystemAddress != "http://accrual:8081" {
 		t.Errorf("AccrualSystemAddress = %q", c.AccrualSystemAddress)

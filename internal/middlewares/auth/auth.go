@@ -39,7 +39,7 @@ func Middleware(tm *auth.TokenManager) func(next http.Handler) http.Handler {
 				return
 			}
 
-			ctx := withIDContext(r.Context(), claims.UserId)
+			ctx := withIDContext(r.Context(), claims.UserID)
 			next.ServeHTTP(rw, r.WithContext(ctx))
 		})
 	}
@@ -51,6 +51,6 @@ func withIDContext(ctx context.Context, id int64) context.Context {
 
 // UserIDFromContext возвращает userID, положенный Middleware, и признак наличия.
 func UserIDFromContext(ctx context.Context) (int64, bool) {
-	userId, ok := ctx.Value(userIDKey).(int64)
-	return userId, ok
+	userID, ok := ctx.Value(userIDKey).(int64)
+	return userID, ok
 }

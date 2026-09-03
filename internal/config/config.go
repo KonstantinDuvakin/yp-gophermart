@@ -10,14 +10,14 @@ import (
 
 type Config struct {
 	RunAddress           string
-	DatabaseUri          string
+	DatabaseURI          string
 	AccrualSystemAddress string
 	JwtSecret            string
 }
 
 const (
 	runAddressFlagName           = "a"
-	databaseUriFlagName          = "d"
+	databaseURIFlagName          = "d"
 	AccrualSystemAddressFlagName = "r"
 )
 
@@ -25,7 +25,7 @@ func NewConfig() *Config {
 	c := &Config{}
 
 	flag.StringVar(&c.RunAddress, runAddressFlagName, "localhost:8080", "адрес и порт запуска HTTP-сервера")
-	flag.StringVar(&c.DatabaseUri, databaseUriFlagName, "", "строка подключения к PostgreSQL")
+	flag.StringVar(&c.DatabaseURI, databaseURIFlagName, "", "строка подключения к PostgreSQL")
 	flag.StringVar(&c.AccrualSystemAddress, AccrualSystemAddressFlagName, "", "адрес системы расчёта начислений")
 
 	return c
@@ -44,9 +44,9 @@ func (c *Config) ApplyEnv() {
 		}
 	}
 
-	if !passed[databaseUriFlagName] {
-		if envDatabaseUri := os.Getenv("DATABASE_URI"); envDatabaseUri != "" {
-			c.DatabaseUri = envDatabaseUri
+	if !passed[databaseURIFlagName] {
+		if envDatabaseURI := os.Getenv("DATABASE_URI"); envDatabaseURI != "" {
+			c.DatabaseURI = envDatabaseURI
 		}
 	}
 

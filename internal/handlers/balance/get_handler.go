@@ -15,14 +15,14 @@ import (
 // сумму списаний пользователя. Коды: 200/401/500.
 func GetHandler(store storage.Storage) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		userId, ok := auth.UserIDFromContext(r.Context())
+		userID, ok := auth.UserIDFromContext(r.Context())
 		if !ok {
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte("Вы не авторизованы"))
 			return
 		}
 
-		balance, err := store.GetBalance(r.Context(), userId)
+		balance, err := store.GetBalance(r.Context(), userID)
 		if err != nil {
 			if errors.Is(err, storage.ErrUserNotFound) {
 				slog.Error("balance: get balance", "error", err)

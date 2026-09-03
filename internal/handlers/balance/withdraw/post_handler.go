@@ -17,7 +17,7 @@ import (
 // счёт указанного заказа. Коды: 200/401/402/422/500.
 func PostHandler(store storage.Storage) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		userId, ok := auth.UserIDFromContext(r.Context())
+		userID, ok := auth.UserIDFromContext(r.Context())
 		if !ok {
 			rw.WriteHeader(http.StatusUnauthorized)
 			rw.Write([]byte("Вы не авторизованы"))
@@ -47,7 +47,7 @@ func PostHandler(store storage.Storage) http.HandlerFunc {
 			return
 		}
 
-		err := store.Withdraw(r.Context(), userId, withdrawDto.Order, withdrawDto.Sum)
+		err := store.Withdraw(r.Context(), userID, withdrawDto.Order, withdrawDto.Sum)
 		if err != nil {
 			if errors.Is(err, storage.ErrInsufficientFunds) {
 				rw.WriteHeader(http.StatusPaymentRequired)
