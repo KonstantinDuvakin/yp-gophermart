@@ -24,12 +24,12 @@ func NewTokenManager(secret string) *TokenManager {
 }
 
 // BuildJWTString выпускает подписанный токен для пользователя userId.
-func (tm *TokenManager) BuildJWTString(userId int64) (string, error) {
+func (tm *TokenManager) BuildJWTString(userID int64) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tm.ttl)),
 		},
-		UserID: userId,
+		UserID: userID,
 	})
 
 	tokenString, err := token.SignedString(tm.secret)
