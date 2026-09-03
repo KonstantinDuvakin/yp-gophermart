@@ -2,7 +2,7 @@ package orders
 
 import (
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/middlewares/auth"
@@ -22,7 +22,7 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 
 		orders, err := store.GetOrders(r.Context(), userId)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("orders: get orders", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -35,7 +35,7 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 
 		data, err := json.Marshal(orders)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("orders: marshal", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return

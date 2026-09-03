@@ -4,7 +4,7 @@ package withdraw
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/middlewares/auth"
@@ -54,7 +54,7 @@ func PostHandler(store storage.Storage) http.HandlerFunc {
 				rw.Write([]byte("Недостаточно средств"))
 				return
 			}
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("withdraw: withdraw", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return

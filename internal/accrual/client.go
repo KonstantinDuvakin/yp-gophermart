@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -26,7 +27,7 @@ type StatusError struct {
 }
 
 func (se *StatusError) Error() string {
-	return fmt.Errorf("ошибка").Error()
+	return fmt.Errorf("ошибка: код %v", se.Code).Error()
 }
 
 var (
@@ -95,7 +96,7 @@ func (c *Client) getOrder(ctx context.Context, number string) (*Dto, time.Durati
 	case http.StatusTooManyRequests:
 		d, err := strconv.Atoi(resp.Header.Get("Retry-After"))
 		if err != nil {
-			fmt.Printf("не удалось получить значение Retry-After: %v", err)
+			slog.Warn("accrual: parse Retry-After", "error", err)
 			d = 30
 		}
 		return nil, time.Duration(d) * time.Second, ErrTooManyRequests

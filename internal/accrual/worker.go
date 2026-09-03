@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/models"
@@ -15,9 +16,10 @@ import (
 // Worker периодически опрашивает систему расчёта начислений по незавершённым
 // заказам и обновляет их статусы и баланс пользователей.
 type Worker struct {
-	store    storage.Storage
-	client   *Client
-	interval time.Duration
+	store      storage.Storage
+	client     *Client
+	interval   time.Duration
+	pauseUntil atomic.Int64
 }
 
 // NewWorker создаёт воркер, опрашивающий accrual раз в секунду.
@@ -43,7 +45,7 @@ func (w *Worker) Run(ctx context.Context) {
 func (w *Worker) processBatch(ctx context.Context) {
 	orderNums, err := w.store.GetUnprocessedOrders(ctx)
 	if err != nil {
-		log.Printf("worker: can't get unprocessed orders. Error: %v", err)
+		slog.Error("worker: get unprocessed orders", "error", err)
 		return
 	}
 
@@ -62,7 +64,7 @@ Orders:
 				defer func() { <-sem }()
 				err := w.processOne(ctx, num)
 				if err != nil {
-					log.Printf("error: %v", err)
+					slog.Error("worker: process order", "error", err)
 				}
 			}(num)
 		}
@@ -72,20 +74,23 @@ Orders:
 }
 
 func (w *Worker) processOne(ctx context.Context, num string) error {
+	if until := w.pauseUntil.Load(); until > 0 {
+		if wait := time.Until(time.Unix(0, until)); wait > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(wait):
+			}
+		}
+	}
+
 	accrualRes, td, err := w.client.GetOrderAccrual(ctx, num)
 	switch {
 	case errors.Is(err, ErrOrderNotRegistered):
 		return ErrOrderNotRegistered
 	case errors.Is(err, ErrTooManyRequests):
-		timer := time.NewTimer(td)
-		defer timer.Stop()
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timer.C:
-			return ErrTooManyRequests
-		}
+		w.pauseUntil.Store(time.Now().Add(td).UnixNano())
+		return ErrTooManyRequests
 	case err != nil:
 		return fmt.Errorf("worker: order %s: %w", num, err)
 	}

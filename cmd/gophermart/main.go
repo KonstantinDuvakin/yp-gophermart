@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,6 +31,11 @@ func main() {
 	c := config.NewConfig()
 	flag.Parse()
 	c.ApplyEnv()
+
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		AddSource: true,
+	}))
+	slog.SetDefault(logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -81,10 +86,10 @@ func main() {
 	}
 
 	go func() {
-		fmt.Printf("Listening on %s\n", c.RunAddress)
+		slog.Info("listening", "addr", c.RunAddress)
 		if err := server.ListenAndServe(); err != nil {
 			if errors.Is(err, http.ErrServerClosed) {
-				fmt.Println("Сервер остановлен")
+				slog.Info("server stopped")
 				return
 			}
 			log.Fatal(err)

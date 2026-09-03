@@ -3,7 +3,7 @@ package withdrawals
 
 import (
 	"encoding/json"
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/middlewares/auth"
@@ -23,7 +23,7 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 
 		withdrawals, err := store.GetWithdrawals(r.Context(), userId)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("withdrawals: get withdrawals", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -36,7 +36,7 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 
 		data, err := json.Marshal(withdrawals)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("withdrawals: get withdrawals", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return

@@ -4,7 +4,7 @@ package register
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/models"
@@ -34,7 +34,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 
 		hashedPassword, err := auth.HashPassword(userDto.Password)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("register: hash password", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -47,7 +47,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 				rw.Write([]byte(storage.ErrLoginTaken.Error()))
 				return
 			}
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("register: create user", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -55,7 +55,7 @@ func PostHandler(store storage.Storage, tm *auth.TokenManager) http.HandlerFunc 
 
 		jwt, err := tm.BuildJWTString(userId)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("register: build token", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return

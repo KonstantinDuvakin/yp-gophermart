@@ -3,8 +3,8 @@ package orders
 
 import (
 	"errors"
-	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -26,7 +26,7 @@ func PostHandler(store storage.Storage) http.HandlerFunc {
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("orders: read body", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -56,7 +56,7 @@ func PostHandler(store storage.Storage) http.HandlerFunc {
 		case errors.Is(err, storage.ErrOrderOwnedByOther):
 			rw.WriteHeader(http.StatusConflict)
 		default:
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("orders: create order", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 		}
 	}

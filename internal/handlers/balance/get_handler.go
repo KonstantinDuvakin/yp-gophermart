@@ -4,7 +4,7 @@ package balance
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/KonstantinDuvakin/yp-gophermart/internal/middlewares/auth"
@@ -25,12 +25,12 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 		balance, err := store.GetBalance(r.Context(), userId)
 		if err != nil {
 			if errors.Is(err, storage.ErrUserNotFound) {
-				fmt.Printf("ошибка: %v", err)
+				slog.Error("balance: get balance", "error", err)
 				rw.WriteHeader(http.StatusInternalServerError)
 				rw.Write([]byte("Внутренняя ошибка сервиса"))
 				return
 			}
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("balance: get balance", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
@@ -38,7 +38,7 @@ func GetHandler(store storage.Storage) http.HandlerFunc {
 
 		data, err := json.Marshal(balance)
 		if err != nil {
-			fmt.Printf("ошибка: %v", err)
+			slog.Error("balance: get balance", "error", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 			rw.Write([]byte("Внутренняя ошибка сервиса"))
 			return
